@@ -30,6 +30,11 @@ const projects: Project[] = Array.from({ length: 50 }, (_, i) => ({
 }));
 
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (req.method !== "GET") {
+    res.setHeader("Allow", ["GET"]);
+    return res.status(405).end(`Method ${req.method} Not Allowed`);
+  }
+
   const { page = "1", limit = "10" } = req.query;
 
   const pageNum = parseInt(page as string);

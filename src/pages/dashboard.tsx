@@ -24,27 +24,37 @@ export default function Dashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [activities, setActivities] = useState<Activity[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let isMounted = true;
     async function loadDashboardData() {
       try {
+        setLoading(true);
+        setError(null);
         const dashboardData = await fetchDashboardData();
+        if (!isMounted) return;
         setData(dashboardData as DashboardData);
-        // Set activities from dashboardData.recentActivity if available, else empty array
         setActivities(
           Array.isArray((dashboardData as DashboardData)?.recentActivity)
             ? (dashboardData as DashboardData).recentActivity
             : [],
         );
-        setLoading(false);
       } catch (error) {
-        console.error("Failed to load dashboard data", error);
-        setLoading(false);
+        if (!isMounted) return;
+        setError("Failed to load dashboard data.");
+        setData(null);
+      } finally {
+        if (isMounted) setLoading(false);
       }
     }
 
-    void loadDashboardData();
-  }, []); // changed from [data] to []
+    loadDashboardData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []); // Only run once on mount
 
   if (loading) {
     return (
@@ -52,6 +62,17 @@ export default function Dashboard() {
         <div className="p-6">
           <h1 className="mb-6 text-2xl font-bold">Dashboard</h1>
           <p>Loading dashboard data...</p>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (error) {
+    return (
+      <Layout>
+        <div className="p-6">
+          <h1 className="mb-6 text-2xl font-bold">Dashboard</h1>
+          <p className="text-red-600">{error}</p>
         </div>
       </Layout>
     );
